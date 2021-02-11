@@ -146,6 +146,13 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
                 if (inView(elem, view)) {
                     if (unload) {
                         elem.setAttribute('data-echo-placeholder', elem.src);
+                        elem.attributes.map(function (attribute) {
+                            return attribute.name.match(/data-echo-zoo-(.+)/);
+                        }).filter(function (value) {
+                            return Array.isArray(value) && value[1] !== undefined;
+                        }).forEach(function (attribute) {
+                            if (!elem.hasAttribute("data-echo-placeholder-zoo-".concat(attribute[1]))) elem.setAttribute("data-echo-placeholder-zoo-".concat(attribute[1]), elem.getAttribute(attribute[1]));
+                        });
                     }
 
                     if (elem.getAttribute('data-echo-background') !== null) {
@@ -173,15 +180,30 @@ function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "functi
                     }
 
                     callback(elem, 'load');
-                } else if (unload && !!(src = elem.getAttribute('data-echo-placeholder'))) {
-                    if (elem.getAttribute('data-echo-background') !== null) {
-                        elem.style.backgroundImage = 'url(' + src + ')';
-                    } else {
-                        elem.src = src;
+                } else if (unload) {
+                    var exec = false;
+
+                    if (!!(src = elem.getAttribute('data-echo-placeholder'))) {
+                        if (elem.getAttribute('data-echo-background') !== null) {
+                            elem.style.backgroundImage = 'url(' + src + ')';
+                        } else {
+                            elem.src = src;
+                        }
+
+                        elem.removeAttribute('data-echo-placeholder');
+                        exec = true;
                     }
 
-                    elem.removeAttribute('data-echo-placeholder');
-                    callback(elem, 'unload');
+                    elem.attributes.map(function (attribute) {
+                        return attribute.name.match(/data-echo-placeholder-zoo-(.+)/);
+                    }).filter(function (value) {
+                        return Array.isArray(value) && value[1] !== undefined;
+                    }).forEach(function (attribute) {
+                        elem.setAttribute(attribute[1], elem.getAttribute("data-echo-placeholder-zoo-".concat(attribute[1])));
+                        elem.removeAttribute("data-echo-placeholder-zoo-".concat(attribute[1]));
+                        exec = true;
+                    });
+                    if (exec) callback(elem, 'unload');
                 }
             });
 

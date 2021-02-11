@@ -114,7 +114,7 @@
         /**
          * @param {Partial<Element | Document>} context
          */
-        echo.render = function (context= null) {
+        echo.render = function (context = null) {
             const nodes = (context || document).querySelectorAll('[data-echo], [data-echo-zoo], [data-echo-background]');
             const length = nodes.length;
             const view = {
@@ -132,6 +132,10 @@
 
                     if (unload) {
                         elem.setAttribute('data-echo-placeholder', elem.src);
+
+                        elem.attributes.map((attribute) => attribute.name.match(/data-echo-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
+                            if (!elem.hasAttribute(`data-echo-placeholder-zoo-${attribute[1]}`)) elem.setAttribute(`data-echo-placeholder-zoo-${attribute[1]}`, elem.getAttribute(attribute[1]));
+                        });
                     }
 
                     if (elem.getAttribute('data-echo-background') !== null) {
@@ -153,16 +157,24 @@
                     }
 
                     callback(elem, 'load');
-                } else if (unload && !!(src = elem.getAttribute('data-echo-placeholder'))) {
-
-                    if (elem.getAttribute('data-echo-background') !== null) {
-                        elem.style.backgroundImage = 'url(' + src + ')';
-                    } else {
-                        elem.src = src;
+                } else if (unload) {
+                    let exec = false;
+                    if (!!(src = elem.getAttribute('data-echo-placeholder'))) {
+                        if (elem.getAttribute('data-echo-background') !== null) {
+                            elem.style.backgroundImage = 'url(' + src + ')';
+                        } else {
+                            elem.src = src;
+                        }
+                        elem.removeAttribute('data-echo-placeholder');
+                        exec = true;
                     }
 
-                    elem.removeAttribute('data-echo-placeholder');
-                    callback(elem, 'unload');
+                    elem.attributes.map((attribute) => attribute.name.match(/data-echo-placeholder-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
+                        elem.setAttribute(attribute[1], elem.getAttribute(`data-echo-placeholder-zoo-${attribute[1]}`));
+                        elem.removeAttribute(`data-echo-placeholder-zoo-${attribute[1]}`);
+                        exec = true;
+                    });
+                    if (exec) callback(elem, 'unload');
                 }
             });
             if (!length) {
