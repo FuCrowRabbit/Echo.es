@@ -3,7 +3,7 @@ declare type Echo = {
 };
 
 declare type EchoOption = {
-    root?: HTMLElement,
+    root?: Element | Document,
     rootMargin?: string,
     threshold?: number | Array<number>,
     unload?: boolean,
@@ -11,7 +11,7 @@ declare type EchoOption = {
 };
 
 declare interface EchoConfig extends EchoOption {
-    root: HTMLElement | null,
+    root: Element | Document | null,
     rootMargin: string | null,
     threshold: number | Array<number> | null,
     unload: boolean,

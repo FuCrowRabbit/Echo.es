@@ -24,7 +24,7 @@
 
        const generateEchoConfig = function (options) {
            return {
-               root: options.root instanceof HTMLElement ? options.root : null,
+               root: options.root instanceof Element || options.root instanceof Document ? options.root : null,
                rootMargin: typeof options.rootMargin === 'string' ? options.rootMargin : null,
                threshold: typeof options.threshold === 'number' || Array.isArray(options.threshold) ? options.threshold : null,
                unload: !!options.unload,
@@ -61,7 +61,7 @@
            const intersectionObserver = new IntersectionObserver(function (entries) {
                entries.forEach(function (entry) {
                    let src;
-                   let remove_queue = [];
+                   let removeQueue = [];
                    const elem = entry.target;
 
                    if (entry.isIntersecting) {
@@ -74,21 +74,21 @@
                        }
 
                        if (elem.getAttribute('data-echo-background') !== null) {
-                           elem.style.backgroundImage = 'url(' + elem.getAttribute('data-echo-background') + ')';
+                           elem.style.backgroundImage = `url(${elem.getAttribute('data-echo-background')})`;
                        } else if (elem instanceof HTMLImageElement && elem.src !== (src = elem.getAttribute('data-echo'))) {
                            elem.src = src;
                        }
 
                        [...elem.attributes].map(attribute => attribute.name.match(/data-echo-zoo-(.+)/)).filter(value => Array.isArray(value) && value[1] !== undefined).forEach(attribute => {
                            elem.setAttribute(attribute[1], elem.getAttribute(`data-echo-zoo-${attribute[1]}`));
-                           remove_queue.push(`data-echo-zoo-${attribute[1]}`);
+                           removeQueue.push(`data-echo-zoo-${attribute[1]}`);
                        });
 
                        if (!unload) {
                            elem.removeAttribute('data-echo');
                            elem.removeAttribute('data-echo-background');
                            elem.removeAttribute('data-echo-zoo');
-                           remove_queue.forEach(name => elem.removeAttribute(name));
+                           removeQueue.forEach(name => elem.removeAttribute(name));
                        }
 
                        callback(entry, 'load');
@@ -97,7 +97,7 @@
 
                        if (!!(src = elem.getAttribute('data-echo-placeholder'))) {
                            if (elem.getAttribute('data-echo-background') !== null) {
-                               elem.style.backgroundImage = 'url(' + src + ')';
+                               elem.style.backgroundImage = `url(${src})`;
                            } else {
                                elem.src = src;
                            }

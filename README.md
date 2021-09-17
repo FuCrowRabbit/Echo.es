@@ -1,8 +1,10 @@
-# Echo.es
+# Echo.es v2
 
 Echo is standalone JavaScript lazy-loading image micro-library.
 
 Echo.es is based on [Echo.js v1.7.2](https://github.com/toddmotto/echo) from "Todd Motto".
+
+Echo.es (v2 or higher) use Intersection Observer API.
 
 ```html
 <body>
@@ -24,8 +26,6 @@ Echo.es is based on [Echo.js v1.7.2](https://github.com/toddmotto/echo) from "To
             console.log(entry, 'has been', op + 'ed')
         }
     });
-
-    // echo.render(); is also available for non-scroll callbacks
 </script>
 </body>
 ```
@@ -33,6 +33,47 @@ Echo.es is based on [Echo.js v1.7.2](https://github.com/toddmotto/echo) from "To
 ## Features
 
 You should see [Echo.js](https://github.com/toddmotto/echo).
+
+### .init() (options)
+
+The `init()` API takes a few options
+
+#### root
+Type: `Element|Document`
+
+https://w3c.github.io/IntersectionObserver/#dom-intersectionobserver-root
+
+#### rootMargin
+Type: `String`
+
+https://w3c.github.io/IntersectionObserver/#dom-intersectionobserver-rootmargin
+
+#### threshold
+Type: `Number|Array<Number>`
+
+https://w3c.github.io/IntersectionObserver/#dom-intersectionobserver-thresholds
+
+#### unload
+Type: `Boolean` Default: `false`
+
+This option will tell echo to unload loaded images once they have scrolled beyond the viewport (including the offset area).
+
+#### callback
+Type: `(entry: IntersectionObserverEntry, operation: 'load' | 'unload') => void`
+
+The callback will be passed the element that has been updated and what the update operation was (ie `load` or `unload`). This can be useful if you want to add a class like `loaded` to the element. Or do some logging.
+
+```js
+echo.init({
+    callback: function (entry, op) {
+        if (op === 'load') {
+          entry.target.classList.add('loaded');
+        } else {
+          entry.target.classList.remove('loaded');
+        }
+    }
+});
+```
 
 ### Added from Echo.es
 
