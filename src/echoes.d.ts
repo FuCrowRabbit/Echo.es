@@ -1,40 +1,19 @@
 declare type Echo = {
     init: (options?: EchoOption) => void,
-    render: (context: Partial<Element | Document>) => void,
-    detach: () => void,
 };
 
 declare type EchoOption = {
-    offset?: number | string,
-    offsetVertical?: number | string,
-    offsetHorizontal?: number | string,
-    offsetTop?: number | string,
-    offsetBottom?: number | string,
-    offsetLeft?: number | string,
-    offsetRight?: number | string,
-    throttle?: number | string,
-    debounce?: boolean,
+    root?: HTMLElement,
+    rootMargin?: string,
+    threshold?: number | Array<number>,
     unload?: boolean,
-    callback?: (element?: HTMLElement, operation?: string) => void,
+    callback?: (entry?: IntersectionObserverEntry, operation?: 'load' | 'unload') => void,
 };
 
 declare interface EchoConfig extends EchoOption {
-    offset: number,
-    offsetVertical: number,
-    offsetHorizontal: number,
-    offsetTop: number,
-    offsetBottom: number,
-    offsetLeft: number,
-    offsetRight: number,
-    throttle: number,
-    debounce: boolean,
+    root: HTMLElement | null,
+    rootMargin: string | null,
+    threshold: number | Array<number> | null,
     unload: boolean,
-    callback: Function,
+    callback: (entry?: IntersectionObserverEntry, operation?: 'load' | 'unload') => void,
 }
-
-declare type Rect = {
-    left: number,
-    top: number,
-    bottom: number,
-    right: number,
-};

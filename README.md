@@ -17,11 +17,11 @@ Echo.es is based on [Echo.js v1.7.2](https://github.com/toddmotto/echo) from "To
 <script src="dist/echoes.js"></script>
 <script>
     echo.init({
-        offset: 100,
-        throttle: 250,
+        rootMargin: '10px 10px',
+        threshold: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 ,1.0],
         unload: false,
-        callback: function (element, op) {
-            console.log(element, 'has been', op + 'ed')
+        callback: function (entry, op) {
+            console.log(entry, 'has been', op + 'ed')
         }
     });
 

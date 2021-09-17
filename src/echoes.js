@@ -11,186 +11,116 @@
         root.echo = factory(root);
     }
 })(this,
-    /**
-     * @param {Document} root
-     * @returns {Echo}
-     */
-    function (root) {
+   /**
+    * @param {Document} root
+    * @returns {Echo}
+    */
+   function (root) {
 
-        const echo = {};
+       const echo = {};
 
-        let callback = () => {
-        };
+       /**
+        * @param {EchoOption} options
+        * @returns {EchoConfig}
+        */
+       const generateEchoConfig = function (options) {
+           return {
+               root:       options.root instanceof HTMLElement ? options.root : null,
+               rootMargin: typeof options.rootMargin === 'string' ? options.rootMargin : null,
+               threshold:  typeof options.threshold === 'number' || Array.isArray(options.threshold) ? options.threshold : null,
+               unload:     !!options.unload,
+               callback:   typeof options.callback === 'function' ? options.callback : () => {
+               },
+           };
+       };
 
-        /** @var {Partial<Rect>} */
-        let offset;
-        /** @var {number | null} */
-        let poll, delay;
-        /** @var {boolean | null} */
-        let useDebounce, unload;
+       /**
+        * @param o {Object}
+        * @return {Object}
+        */
+       const deleteEmptyParams = o => {
+           Object.entries(o).forEach(([key, value]) => (value === null || value === undefined || value === '' ? delete o[key] : null));
+           return o;
+       }
 
-        /**
-         * @param {HTMLElement} element
-         * @returns {boolean}
-         */
-        const isHidden = function (element) {
-            return (element.offsetParent === null);
-        };
+       /**
+        * @param {EchoOption} options
+        */
+       echo.init = function (options = {}) {
+           if (options.offset !== undefined) console.warn('EchoOption.offset was deleted options.');
+           if (options.offsetTop !== undefined) console.warn('EchoOption.offsetTop was deleted options.');
+           if (options.offsetBottom !== undefined) console.warn('EchoOption.offsetBottom was deleted options.');
+           if (options.offsetLeft !== undefined) console.warn('EchoOption.offsetLeft was deleted options.');
+           if (options.offsetRight !== undefined) console.warn('EchoOption.offsetRight was deleted options.');
+           if (options.throttle !== undefined) console.warn('EchoOption.throttle was deleted options.');
+           if (options.debounce !== undefined) console.warn('EchoOption.debounce was deleted options.');
+           const config               = generateEchoConfig(options);
+           const unload               = config.unload;
+           const callback             = config.callback;
+           const nodes                = document.querySelectorAll('[data-echo], [data-echo-zoo], [data-echo-background]');
+           const intersectionObserver = new IntersectionObserver(function (entries) {
+               entries.forEach(function (entry) {
+                   let src;
+                   let remove_queue = [];
+                   const elem       = entry.target;
+                   if (entry.isIntersecting) {
+                       if (unload) {
+                           elem.setAttribute('data-echo-placeholder', elem.src);
 
-        /**
-         * @param element
-         * @param {Rect} view
-         * @returns {boolean}
-         */
-        const inView = function (element, view) {
-            if (isHidden(element)) {
-                return false;
-            }
+                           [...elem.attributes].map((attribute) => attribute.name.match(/data-echo-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
+                               if (!elem.hasAttribute(`data-echo-placeholder-zoo-${attribute[1]}`)) elem.setAttribute(`data-echo-placeholder-zoo-${attribute[1]}`, elem.getAttribute(attribute[1]));
+                           });
+                       }
 
-            const box = element.getBoundingClientRect();
-            return (box.right >= view.left && box.bottom >= view.top && box.left <= view.right && box.top <= view.bottom);
-        };
+                       if (elem.getAttribute('data-echo-background') !== null) {
+                           elem.style.backgroundImage = 'url(' + elem.getAttribute('data-echo-background') + ')';
+                       } else if (elem instanceof HTMLImageElement && elem.src !== (src = elem.getAttribute('data-echo'))) {
+                           elem.src = src;
+                       }
 
-        const debounceOrThrottle = function () {
-            if (!useDebounce && !!poll) {
-                return;
-            }
-            clearTimeout(poll);
-            poll = setTimeout(function () {
-                echo.render();
-                poll = null;
-            }, delay);
-        };
+                       [...elem.attributes].map((attribute) => attribute.name.match(/data-echo-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
+                           elem.setAttribute(attribute[1], elem.getAttribute(`data-echo-zoo-${attribute[1]}`));
+                           remove_queue.push(`data-echo-zoo-${attribute[1]}`);
+                       });
 
-        /**
-         * @param {EchoOption} options
-         * @returns {EchoConfig}
-         */
-        const generateEchoConfig = function (options) {
-            const optionToInt = (options, fallback) => parseInt(options || fallback, 10);
-            const offsetAll = optionToInt(options.offset, 0);
-            const offsetVertical = optionToInt(options.offsetVertical, offsetAll);
-            const offsetHorizontal = optionToInt(options.offsetHorizontal, offsetAll);
-            return {
-                offset: offsetAll,
-                offsetVertical: offsetVertical,
-                offsetHorizontal: offsetHorizontal,
-                offsetTop: optionToInt(options.offsetTop, offsetVertical),
-                offsetBottom: optionToInt(options.offsetBottom, offsetVertical),
-                offsetLeft: optionToInt(options.offsetLeft, offsetHorizontal),
-                offsetRight: optionToInt(options.offsetRight, offsetHorizontal),
-                throttle: optionToInt(options.throttle, 250),
-                debounce: options.debounce !== false,
-                unload: !!options.unload,
-                callback: options.callback || callback,
-            };
-        };
+                       if (!unload) {
+                           elem.removeAttribute('data-echo');
+                           elem.removeAttribute('data-echo-background');
+                           elem.removeAttribute('data-echo-zoo');
+                           remove_queue.forEach((name) => elem.removeAttribute(name));
+                       }
 
-        /**
-         * @param {EchoOption} options
-         */
-        echo.init = function (options = {}) {
-            const config = generateEchoConfig(options);
-            offset = {
-                top: config.offsetTop,
-                bottom: config.offsetBottom,
-                left: config.offsetLeft,
-                right: config.offsetRight,
-            };
-            delay = config.throttle;
-            useDebounce = config.debounce;
-            unload = config.unload;
-            callback = config.callback;
-            echo.render();
-            if (document.addEventListener) {
-                root.addEventListener('scroll', debounceOrThrottle, false);
-                root.addEventListener('load', debounceOrThrottle, false);
-            } else {
-                root.attachEvent('onscroll', debounceOrThrottle);
-                root.attachEvent('onload', debounceOrThrottle);
-            }
-        };
+                       callback(entry, 'load');
+                   } else {
+                       let exec = false;
+                       if (!!(src = elem.getAttribute('data-echo-placeholder'))) {
+                           if (elem.getAttribute('data-echo-background') !== null) {
+                               elem.style.backgroundImage = 'url(' + src + ')';
+                           } else {
+                               elem.src = src;
+                           }
+                           elem.removeAttribute('data-echo-placeholder');
+                           exec = true;
+                       }
 
-        /**
-         * @param {Partial<Element | Document>} context
-         */
-        echo.render = function (context = null) {
-            const nodes = (context || document).querySelectorAll('[data-echo], [data-echo-zoo], [data-echo-background]');
-            const length = nodes.length;
-            const view = {
-                left: 0 - offset.left,
-                top: 0 - offset.top,
-                bottom: (root.innerHeight || document.documentElement.clientHeight) + offset.bottom,
-                right: (root.innerWidth || document.documentElement.clientWidth) + offset.right
-            };
-            NamedNodeMap.prototype.filter = Array.prototype.filter;
-            NamedNodeMap.prototype.map = Array.prototype.map;
-            nodes.forEach(function (elem) {
-                let src;
-                let remove_queue = [];
-                if (inView(elem, view)) {
+                       [...elem.attributes].map((attribute) => attribute.name.match(/data-echo-placeholder-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
+                           elem.setAttribute(attribute[1], elem.getAttribute(`data-echo-placeholder-zoo-${attribute[1]}`));
+                           elem.removeAttribute(`data-echo-placeholder-zoo-${attribute[1]}`);
+                           exec = true;
+                       });
+                       if (exec) callback(entry, 'unload');
+                   }
+               });
+           }, deleteEmptyParams({
+                                    root:       config.root,
+                                    rootMargin: config.rootMargin,
+                                    threshold:  config.threshold,
+                                }));
+           [...nodes].forEach(function (elem) {
+               intersectionObserver.observe(elem);
+           });
+       };
 
-                    if (unload) {
-                        elem.setAttribute('data-echo-placeholder', elem.src);
+       return echo;
 
-                        elem.attributes.map((attribute) => attribute.name.match(/data-echo-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
-                            if (!elem.hasAttribute(`data-echo-placeholder-zoo-${attribute[1]}`)) elem.setAttribute(`data-echo-placeholder-zoo-${attribute[1]}`, elem.getAttribute(attribute[1]));
-                        });
-                    }
-
-                    if (elem.getAttribute('data-echo-background') !== null) {
-                        elem.style.backgroundImage = 'url(' + elem.getAttribute('data-echo-background') + ')';
-                    } else if (elem instanceof HTMLImageElement && elem.src !== (src = elem.getAttribute('data-echo'))) {
-                        elem.src = src;
-                    }
-
-                    elem.attributes.map((attribute) => attribute.name.match(/data-echo-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
-                        elem.setAttribute(attribute[1], elem.getAttribute(`data-echo-zoo-${attribute[1]}`));
-                        remove_queue.push(`data-echo-zoo-${attribute[1]}`);
-                    });
-
-                    if (!unload) {
-                        elem.removeAttribute('data-echo');
-                        elem.removeAttribute('data-echo-background');
-                        elem.removeAttribute('data-echo-zoo');
-                        remove_queue.forEach((name) => elem.removeAttribute(name));
-                    }
-
-                    callback(elem, 'load');
-                } else if (unload) {
-                    let exec = false;
-                    if (!!(src = elem.getAttribute('data-echo-placeholder'))) {
-                        if (elem.getAttribute('data-echo-background') !== null) {
-                            elem.style.backgroundImage = 'url(' + src + ')';
-                        } else {
-                            elem.src = src;
-                        }
-                        elem.removeAttribute('data-echo-placeholder');
-                        exec = true;
-                    }
-
-                    elem.attributes.map((attribute) => attribute.name.match(/data-echo-placeholder-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
-                        elem.setAttribute(attribute[1], elem.getAttribute(`data-echo-placeholder-zoo-${attribute[1]}`));
-                        elem.removeAttribute(`data-echo-placeholder-zoo-${attribute[1]}`);
-                        exec = true;
-                    });
-                    if (exec) callback(elem, 'unload');
-                }
-            });
-            if (!length) {
-                echo.detach();
-            }
-        };
-
-        echo.detach = function () {
-            if (document.removeEventListener) {
-                root.removeEventListener('scroll', debounceOrThrottle);
-            } else {
-                root.detachEvent('onscroll', debounceOrThrottle);
-            }
-            clearTimeout(poll);
-        };
-
-        return echo;
-
-    });
+   });
