@@ -68,7 +68,8 @@
                            elem.setAttribute('data-echo-placeholder', elem.src);
 
                            [...elem.attributes].map((attribute) => attribute.name.match(/data-echo-zoo-(.+)/)).filter((value) => Array.isArray(value) && value[1] !== undefined).forEach((attribute) => {
-                               if (!elem.hasAttribute(`data-echo-placeholder-zoo-${attribute[1]}`)) elem.setAttribute(`data-echo-placeholder-zoo-${attribute[1]}`, elem.getAttribute(attribute[1]));
+                               const value = elem.getAttribute(attribute[1]);
+                               if (!elem.hasAttribute(`data-echo-placeholder-zoo-${attribute[1]}`) && value !== null) elem.setAttribute(`data-echo-placeholder-zoo-${attribute[1]}`, value);
                            });
                        }
 
